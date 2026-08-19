@@ -39,7 +39,7 @@ jobs:
       - name: Checkout sing-box
         uses: actions/checkout@v6
         with:
-          repository: reF1nd/sing-box
+          repository: Uevo001/sing-box
           ref: ${{ inputs.commit_hash != '' && inputs.commit_hash || format('v{0}', inputs.version) }}
           path: sing-box
           fetch-depth: 1
