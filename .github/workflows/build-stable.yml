@@ -1,10 +1,14 @@
-name: Build sing-box CLI
+name: Build sing-box CLI (linux-amd64-v3 static)
 
 on:
   workflow_dispatch:
     inputs:
       commit_hash:
         description: 'Optional commit hash (empty = latest commit on default branch)'
+        required: false
+        default: ''
+      build_tags:
+        description: 'Build tags (comma-separated). Empty = DEFAULT_BUILD_TAGS without naive/purego/musl'
         required: false
         default: ''
 
@@ -14,7 +18,7 @@ concurrency:
 
 env:
   GO_VERSION: '1.25.x'
-  REPO: Uevo001/sing-box
+  REPO: reF1nd/sing-box
 
 jobs:
   build:
@@ -76,13 +80,17 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          if [[ -f sing-box/release/DEFAULT_BUILD_TAGS ]]; then
-            TAGS=$(cat sing-box/release/DEFAULT_BUILD_TAGS)
+          if [[ -n "${{ inputs.build_tags }}" ]]; then
+            TAGS="${{ inputs.build_tags }}"
           else
-            TAGS="with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_acme,with_clash_api,with_tailscale,badlinkname,tfogo_checklinkname0"
+            if [[ -f sing-box/release/DEFAULT_BUILD_TAGS ]]; then
+              TAGS=$(cat sing-box/release/DEFAULT_BUILD_TAGS)
+            else
+              TAGS="with_gvisor,with_quic,with_dhcp,with_wireguard,with_utls,with_acme,with_clash_api,with_tailscale,badlinkname,tfogo_checklinkname0"
+            fi
+            # strip naive / purego / musl (not needed for static pure-Go build)
+            TAGS=$(echo "$TAGS" | sed -E 's/,?with_naive_outbound//g; s/,?with_purego//g; s/,?with_musl//g; s/^,//; s/,$//')
           fi
-          # strip naive / purego / musl (not needed for static pure-Go build)
-          TAGS=$(echo "$TAGS" | sed -E 's/,?with_naive_outbound//g; s/,?with_purego//g; s/,?with_musl//g; s/^,//; s/,$//')
 
           LDFLAGS=""
           if [[ -f sing-box/release/LDFLAGS ]]; then
